@@ -9,3 +9,4 @@ if __name__ == '__main__':
         print('Camera not opened')
     else:
         camera._capture_frame()    
+        
