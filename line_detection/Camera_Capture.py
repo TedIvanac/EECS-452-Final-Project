@@ -30,7 +30,7 @@ class Camera_Capture():
 
             cv.imshow('Default', frame)
             binary = self.image_processor._gray2binary(frame)
-            self.image_processor._draw_contour(binary, frame)
+            # self.image_processor._draw_contour(binary, frame)
 
             if frame_count % (FPS) == 0:
                 diff = self.image_processor._abs_diff(prev_frame, binary)
