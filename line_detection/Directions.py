@@ -6,6 +6,7 @@ class Directions():
         self.dir = None
         self.x = None
         self.y = None
+        self.thickness = None
 
     def _get_distance(self,diff):
 
@@ -64,10 +65,36 @@ class Directions():
             idx = np.argmax(rows)
             return rows[idx],cols[idx]
 
+    def _get_thickness(self, diff):
+        h_thickness = 0
+        w_thickness = 0
+
+        i = self.x
+        while True:
+            if diff[i,self.y] == 1:
+                h_thickness += 1
+                i -= 1
+            if i < 0 or diff[i, self.y] == 0:
+                break
+
+        i = self.y
+        while True:
+            if diff[self.x, i] == 1:
+                w_thickness += 1
+                i += 1
+            if i >= diff.shape[1] or diff[self.x, i] == 0:
+                break
+
+        if h_thickness > w_thickness:
+            return w_thickness
+        else:
+            return h_thickness
+
     def _get_direction(self, diff):
         self.dir = None
         if self.x is None:
             self.x, self.y = self._get_x_y(diff)
+            self.thickness = self._get_thickness(diff)
     
         directions = [
             (-1, 0, 0),  # Up
@@ -92,12 +119,9 @@ class Directions():
         if self.dir != None:
             distance = self._get_distance(diff)
 
-            if self.dir == 0:
-                print('Going forward: ' + str(distance) + ' inches')
-            elif self.dir == 1:
-                print('Turning around: ' + str(distance) + ' inches')
-            elif self.dir == 2:
-                print('Turning left: ' + str(distance) + ' inches')
-            elif self.dir == 3:
-                print('Turning right: ' + str(distance) + ' inches')
-        return diff
+            print("Distance: " + str(distance))
+            print("Direction: " + str(self.dir))
+
+            return diff, distance, self.dir
+            
+        return diff, None, None
