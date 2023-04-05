@@ -25,7 +25,7 @@ class Image_Process():
     # Requires that drawing surface is completely stationary.
     def _abs_diff(self, previous_frame, current_frame):
         diff = cv.absdiff(previous_frame, current_frame)
-        return diff/255
+        return diff
 
     def _draw_contour(self, binary, frame):
 

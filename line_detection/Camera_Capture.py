@@ -4,7 +4,7 @@ import numpy as np
 from Image_Process import Image_Process
 from Directions import Directions
 
-CAMERA_DIR = 0
+CAMERA_DIR = 4
 FPS = 15
 DELAY = int(1000/FPS)
 
@@ -22,37 +22,39 @@ class Camera_Capture():
     def _capture_frame(self):
         frame_count = 0
         prev_frame = np.ones((480, 640), dtype=np.uint8)*255
-
-        diff = np.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 1, 1, 1, 1, 0, 0],
-                         [0, 0, 1, 0, 0, 0, 0, 0],
-                         [0, 0, 1, 0, 0, 0, 0, 0]])
+        pause = False
 
         while True:
-            ret, frame = self.cap.read()
-            if not ret:
-                return
+            if not pause:
+                ret, frame = self.cap.read()
+                if not ret:
+                    return
 
-            cv.imshow('Default', frame)
-            binary = self.image_processor._gray2binary(frame)
-            # self.image_processor._draw_contour(binary, frame)
+                cv.imshow('Default', frame)
+                binary = self.image_processor._gray2binary(frame)
 
-            if frame_count % (FPS) == 0:
-                # diff = self.image_processor._abs_diff(prev_frame, binary)
-                diff, distance, dir = self.robot_commands._comm_command(diff)
-                prev_frame = binary
+                if frame_count % (FPS) == 0:
+                    diff = self.image_processor._abs_diff(prev_frame, binary)
+                    distance, dir = self.robot_commands._comm_command(diff)
+                    prev_frame = binary
 
-                if distance is not None and dir is not None:
-                    pass
-            
-            frame_count += 1
+                    if distance is not None and dir is not None:
+                        pass
+                
+                frame_count += 1
 
             key = cv.waitKey(DELAY)
             if key == ord('q'):
                 print('Programming stopping')
                 break
+
+            if key == ord('n'):
+                pause = not pause
+                if pause:
+                    print('Pausing')
+                else:
+                    print('Unpausing')
+
 
         
         print('Destroying all Windows')
