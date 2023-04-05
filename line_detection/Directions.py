@@ -6,45 +6,15 @@ class Directions():
         self.dir = None
         self.x = None
         self.y = None
-        self.thickness = None
+        self.p = None
 
-    def _get_distance(self,diff):
-
-        if self.dir == 0:  # Up
-            start_x, end_x, start_y, end_y = self.x, self.x, self.y, self.y
-            while start_x > 0 and diff[start_x - 1, start_y] == 1: 
-                diff[start_x, start_y] = 0
-                start_x -= 1
-            while end_x < diff.shape[0] - 1 and diff[end_x + 1, end_y] == 1: end_x += 1
-        elif self.dir == 1:  # Down
-            start_x, end_x, start_y, end_y = self.x, self.x, self.y, self.y
-            while start_x < diff.shape[0] - 1 and diff[start_x + 1, start_y] == 1: 
-                diff[start_x, start_y] = 0
-                start_x += 1
-            while end_x > 0 and diff[end_x - 1, end_y] == 1: end_x -= 1
-        elif self.dir == 2:  # Left
-            start_x, end_x, start_y, end_y = self.x, self.x, self.y, self.y
-            while start_y > 0 and diff[start_x, start_y - 1] == 1: 
-                diff[start_x, start_y] = 0
-                start_y -= 1
-            while end_y < diff.shape[1] - 1 and diff[end_x, end_y + 1] == 1: end_y += 1
-        elif self.dir == 3:  # Right
-            start_x, end_x, start_y, end_y = self.x, self.x, self.y, self.y
-            while start_y < diff.shape[1] - 1 and diff[start_x, start_y + 1] == 1: 
-                diff[start_x, start_y] = 0
-                start_y += 1
-            while end_y > 0 and diff[end_x, end_y - 1] == 1: end_y -= 1
-        else:
-            return 0
-
-        self.x = start_x
-        self.y = start_y
-        distance = (abs(end_x - start_x) + 1) * (abs(end_y - start_y) + 1) / (38 * 2.54)
-
+    def _get_distance(self):
+        distance = abs(self.p) / ( 38 * 2.54)
+        # distance = (abs(end_x - start_x) + 1) * (abs(end_y - start_y) + 1) / (38 * 2.54)
         return distance
     
     def _get_x_y(self, diff):
-        rows, cols = np.where(diff == 1)
+        rows, cols = np.where(diff == 255)
         
         if rows.size == 0 or cols.size == 0:
             return None, None
@@ -65,63 +35,80 @@ class Directions():
             idx = np.argmax(rows)
             return rows[idx],cols[idx]
 
-    def _get_thickness(self, diff):
-        h_thickness = 0
-        w_thickness = 0
+    def _get_h_w(self, diff):
+        h_up = 0
+        w_right = 0
+        h_down = 0
+        w_left = 0
 
-        i = self.x
+        i = self.x-1
         while True:
-            if diff[i,self.y] == 1:
-                h_thickness += 1
-                i -= 1
             if i < 0 or diff[i, self.y] == 0:
                 break
+            if diff[i,self.y] == 255:
+                h_up += 1
+                i -= 1
 
-        i = self.y
+        i = self.y+1
         while True:
-            if diff[self.x, i] == 1:
-                w_thickness += 1
-                i += 1
             if i >= diff.shape[1] or diff[self.x, i] == 0:
                 break
+            if diff[self.x, i] == 255:
+                w_right += 1
+                i += 1
+            
+        i = self.x+1
+        while True:
+            if i >= diff.shape[0] or diff[i, self.y] == 0:
+                break
+            if diff[i,self.y] == 255:
+                h_down -= 1
+                i += 1
+            
+        i = self.y-1
+        while True:
+            if i < 0 or diff[self.x, i] == 0:
+                break
+            if diff[self.x, i] == 255:
+                w_left -= 1
+                i -= 1
+            
+        directions = [h_up, abs(h_down), abs(w_left), w_right]
+        max_dir_index = directions.index(max(directions))
 
-        if h_thickness > w_thickness:
-            return w_thickness
-        else:
-            return h_thickness
+        return directions[max_dir_index], max_dir_index
 
     def _get_direction(self, diff):
-        self.dir = None
         if self.x is None:
             self.x, self.y = self._get_x_y(diff)
-            self.thickness = self._get_thickness(diff)
-    
-        directions = [
-            (-1, 0, 0),  # Up
-            (0, 1, 3),   # Right
-            (1, 0, 1),   # Down
-            (0, -1, 2)   # Left
-        ]
+            self.p, self.dir = self._get_h_w(diff)
+        else:
+            if self.dir == 0:
+                self.x = self.x - self.p
+                diff[self.x+1,self.y] = 0
+            elif self.dir == 1:
+                self.x = self.x + self.p
+                diff[self.x-1,self.y] = 0
+            elif self.dir == 2:
+                self.y = self.y - self.p
+                diff[self.x,self.y+1] = 0
+            elif self.dir == 3:
+                self.y = self.y + self.p
+                diff[self.x,self.y-1] = 0
 
-        for dx, dy, direction in directions:
-            new_x, new_y = self.x + dx, self.y + dy
-            if new_x < 0 or new_x >= diff.shape[0] or new_y < 0 or new_y >= diff.shape[1]:
-                continue
-            if diff[new_x,new_y] == 1:
-                self.dir = direction
-                return self.x, self.y, direction
-        self.dir = None
-        return 0, 0, self.dir
+            self.p, self.dir = self._get_h_w(diff)
+
+        return self.x, self.y, self.dir
 
     def _comm_command(self, diff): 
         self.x, self.y, self.dir = self._get_direction(diff)
         
         if self.dir != None:
-            distance = self._get_distance(diff)
+            distance = round(self._get_distance(),2)
 
             print("Distance: " + str(distance))
             print("Direction: " + str(self.dir))
 
-            return diff, distance, self.dir
+            return str(distance), str(self.dir)
             
-        return diff, None, None
+        return None, None
