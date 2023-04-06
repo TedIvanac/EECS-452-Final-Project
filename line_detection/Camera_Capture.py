@@ -11,7 +11,7 @@ CAMERA_DIR = 4
 FPS = 15
 DELAY = int(1000/FPS)
 
-serverAddress = (None,2222)
+serverAddress = ('192.168.0.23',2222)
 
 bufferSize = 1024
 UDPClient = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
