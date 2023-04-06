@@ -1,12 +1,20 @@
 import cv2 as cv
 import numpy as np
 
+import socket
+import struct
+
 from Image_Process import Image_Process
 from Directions import Directions
 
 CAMERA_DIR = 4
 FPS = 15
 DELAY = int(1000/FPS)
+
+serverAddress = (None,2222)
+
+bufferSize = 1024
+UDPClient = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 class Camera_Capture():
     
@@ -39,7 +47,9 @@ class Camera_Capture():
                     prev_frame = binary
 
                     if distance is not None and dir is not None:
-                        pass
+                        message = struct.pack('fi', distance, dir)
+                        UDPClient.sendto(message, serverAddress)
+
                 
                 frame_count += 1
 
