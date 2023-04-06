@@ -85,16 +85,20 @@ class Directions():
         else:
             if self.dir == 0:
                 self.x = self.x - self.p
-                diff[self.x+1,self.y] = 0
+                if self.x+1 < diff.shape[0]:
+                    diff[self.x+1,self.y] = 0
             elif self.dir == 1:
                 self.x = self.x + self.p
-                diff[self.x-1,self.y] = 0
+                if self.x-1 < 0:
+                    diff[self.x-1,self.y] = 0
             elif self.dir == 2:
                 self.y = self.y - self.p
-                diff[self.x,self.y+1] = 0
+                if self.y+1 < diff.shape[1]:
+                    diff[self.x,self.y+1] = 0
             elif self.dir == 3:
                 self.y = self.y + self.p
-                diff[self.x,self.y-1] = 0
+                if self.y-1 < 0:
+                    diff[self.x,self.y-1] = 0
 
             self.p, self.dir = self._get_h_w(diff)
 
