@@ -38,12 +38,13 @@ class Camera_Capture():
                 if not ret:
                     return
 
-                cv.imshow('Default', frame)
+                # cv.imshow('Default', frame)
                 binary = self.image_processor._gray2binary(frame)
+                cv.imshow('Binary', binary)
 
                 if frame_count % (FPS) == 0:
-                    diff = self.image_processor._abs_diff(prev_frame, binary)
-                    distance, dir = self.robot_commands._comm_command(diff)
+                    # diff = self.image_processor._abs_diff(prev_frame, binary)
+                    distance, dir = self.robot_commands._comm_command(binary)
                     prev_frame = binary
 
                     if distance is not None and dir is not None:
