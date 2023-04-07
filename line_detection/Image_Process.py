@@ -17,7 +17,7 @@ class Image_Process():
     # Return binary image
     def _gray2binary(self, frame):
         frame = self._rgb2gray(frame)
-        ret, binary = cv.threshold(frame, BLACK_THRESHOLD, 255, cv.THRESH_BINARY_INV)
+        ret, binary = cv.threshold(frame, BLACK_THRESHOLD, 255, cv.THRESH_BINARY)
         return binary
 
     # Return the difference between the previous frame and the current frame.
