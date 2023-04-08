@@ -1,19 +1,11 @@
 import cv2 as cv
 
-import socket
-import struct
-
 from Image_Process import Image_Process
 from Directions import Directions
 
 CAMERA_DIR = 4
 FPS = 15
 DELAY = int(1000/FPS)
-
-# Server information
-SERVER_ADDRESS = ('192.168.0.23',2222)
-BUFFER_SIZE = 1024
-UDP_CLIENT = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 class Camera_Capture():
     
@@ -56,11 +48,7 @@ class Camera_Capture():
                 cv.imshow('Binary', binary)
 
                 if frame_count % (FPS) == 0:
-                    distance, dir = self.robot_commands._comm_command(binary)
-
-                    if distance is not None and dir is not None:
-                        message = struct.pack('fi', distance, dir)
-                        UDP_CLIENT.sendto(message, SERVER_ADDRESS)
+                    self.robot_commands._comm_command(binary)
 
                 frame_count += 1
 
