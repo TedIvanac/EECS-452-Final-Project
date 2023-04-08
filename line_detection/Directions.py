@@ -19,6 +19,7 @@ class Directions():
 
         self.data = []
 
+    """Obtain the midpoint of the current line segment being traversed"""
     def _get_midpoint(self, prev):
         if self.dir in [0,1]:
             midpoint = math.ceil((self.x+prev)/2)
@@ -27,6 +28,7 @@ class Directions():
 
         return midpoint
     
+    """Obtain the length at the midpoint of the current line segment being traversed"""
     def _get_length(self, midpoint,diff):
         k = 0
         l = 0
@@ -60,8 +62,6 @@ class Directions():
                     break
 
         return l, k
-
-
 
     """Obtain the distance based on the number of pixels from
     current node to the farthest node based on the direction"""

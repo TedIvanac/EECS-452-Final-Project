@@ -31,9 +31,9 @@ class Camera_Capture():
 
         cv.destroyWindow('Setup')
 
-    # Main function - iterating through frames and converting to binary images.
-    # Calculating distance and direction from binary image.
-    # Sending distance (float) and direction (int) to server.
+    """Main function - iterating through frames and converting to binary images.
+    Calculating distance and direction from binary image.
+    Sending distance (float) and direction (int) to server."""
     def _capture_frame(self):
         frame_count = 0
         pause = False
