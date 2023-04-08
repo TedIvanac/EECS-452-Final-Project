@@ -17,7 +17,7 @@ class Image_Process():
     # Return binary image
     def _gray2binary(self, frame):
         frame = self._rgb2gray(frame)
-        ret, binary = cv.threshold(frame, BLACK_THRESHOLD, 255, cv.THRESH_BINARY)
+        ret, binary = cv.threshold(frame, BLACK_THRESHOLD, 255, cv.THRESH_BINARY_INV)
         return binary
 
     # Return the difference between the previous frame and the current frame.
@@ -26,11 +26,3 @@ class Image_Process():
     def _abs_diff(self, previous_frame, current_frame):
         diff = cv.absdiff(previous_frame, current_frame)
         return diff
-
-    def _draw_contour(self, binary, frame):
-
-        contours, _ = cv.findContours(binary, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_TC89_KCOS)
-
-        for contour in contours:
-            x, y, w, h = cv.boundingRect(contour)
-            cv.rectangle(frame, (x,y), (x+w,y+h), (0,255,0), 2)

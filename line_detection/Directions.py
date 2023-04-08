@@ -8,33 +8,25 @@ class Directions():
         self.y = None
         self.p = None
 
+    # Obtain the distance based on the number of pixels from
+    # current node to the farthest node based on the direction
     def _get_distance(self):
         distance = abs(self.p) / ( 38 * 2.54)
-        # distance = (abs(end_x - start_x) + 1) * (abs(end_y - start_y) + 1) / (38 * 2.54)
         return distance
     
+    # Obtain the x and y coordinate for the starting location
     def _get_x_y(self, diff):
         rows, cols = np.where(diff == 255)
         
         if rows.size == 0 or cols.size == 0:
             return None, None
-
-        if self.dir is None:
-            idx = np.argmax(rows)
-            return rows[idx],cols[idx]
-        elif self.dir == 0:
-            idx = np.argmin(rows)
-            return rows[idx],cols[idx]
-        elif self.dir == 1:
-            idx = np.argmax(cols)
-            return rows[idx],cols[idx]
-        elif self.dir == 2:
-            idx = np.argmin(cols)
-            return rows[idx],cols[idx]
-        elif self.dir == 3:
+        else:
             idx = np.argmax(rows)
             return rows[idx],cols[idx]
 
+    # Obtain the lengths from current node to farthest nodes
+    # in all directions. Based on greatest distance, a direction
+    # is generated and returned alongside the greatest distance.
     def _get_h_w(self, diff):
         h_up = 0
         w_right = 0
@@ -78,6 +70,9 @@ class Directions():
 
         return directions[max_dir_index], max_dir_index
 
+    # Obtain the starting coordinates and direction to traverse.
+    # Otherwise change location to represent the distance travelled.
+    # Additionally update adjacent node from travelled direction to 0.
     def _get_direction(self, diff):
         if self.x is None:
             self.x, self.y = self._get_x_y(diff)
@@ -104,15 +99,18 @@ class Directions():
 
         return self.x, self.y, self.dir
 
+    # Main function - Binary image is passed to obtain a starting coordinate and direction
+    # Distance is calculated and returned alongside direction.
+    # Will only operate for 1 segment of the line until called again
     def _comm_command(self, diff): 
         self.x, self.y, self.dir = self._get_direction(diff)
-        
+
         if self.dir != None:
             distance = round(self._get_distance(),2)
 
             print("Distance: " + str(distance))
             print("Direction: " + str(self.dir))
 
-            return str(distance), str(self.dir)
+            return distance, self.dir
             
         return None, None
