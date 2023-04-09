@@ -152,6 +152,7 @@ class Directions():
                 prev = self.x
                 self.x = self.x + self.p
                 mp = self._get_midpoint(prev)
+                l, k = self._get_length(mp, diff)
 
                 if self.x-1 < 0:
                     diff[prev:self.x-1,self.y-l:self.y+k] = 0
@@ -160,6 +161,7 @@ class Directions():
                 prev = self.y
                 self.y = self.y - self.p
                 mp = self._get_midpoint(prev)
+                l, k = self._get_length(mp, diff)
 
                 if self.y+1 < diff.shape[1]:
                     diff[self.x-l:self.x+k,prev:self.y+1:-1] = 0
@@ -168,6 +170,7 @@ class Directions():
                 prev = self.y
                 self.y = self.y + self.p
                 mp = self._get_midpoint(prev)
+                l, k = self._get_length(mp, diff)
 
                 if self.y-1 < 0:
                     diff[self.x-l:self.x+k,prev:self.y-1] = 0
