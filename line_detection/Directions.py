@@ -198,3 +198,5 @@ class Directions():
 
         json_data = json.dumps(self.data)   
         UDP_CLIENT.sendto(json_data.encode(), SERVER_ADDRESS)
+
+        self.data = []

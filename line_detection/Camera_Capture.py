@@ -20,6 +20,7 @@ class Camera_Capture():
     
     # Allows user to align camera until Enter key is pressed
     def _setup(self):
+        print("Press Enter once setup is complete")
         while True:
             ret, frame = self.cap.read()
             if not ret:
@@ -29,6 +30,7 @@ class Camera_Capture():
             if cv.waitKey(1) == 13:
                 break
 
+        print('Please wait while all the windows are being closed')
         cv.destroyWindow('Setup')
 
     """Main function - iterating through frames and converting to binary images.
