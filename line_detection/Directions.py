@@ -4,9 +4,9 @@ import socket
 import json
 
 # Server information
-# SERVER_ADDRESS = ('192.168.0.23',2222)
-# BUFFER_SIZE = 1024
-# UDP_CLIENT = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+SERVER_ADDRESS = ('192.168.43.234',2222)
+BUFFER_SIZE = 1024
+UDP_CLIENT = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 class Directions():
 
@@ -161,7 +161,7 @@ class Directions():
             if not array:
                 break
 
-        # json_data = json.dumps(self.data)   
-        # UDP_CLIENT.sendto(json_data.encode(), SERVER_ADDRESS)
+        json_data = json.dumps(self.data)   
+        UDP_CLIENT.sendto(json_data.encode(), SERVER_ADDRESS)
 
         self.data = []

@@ -3,7 +3,9 @@ import cv2 as cv
 BLACK_THRESHOLD = 10
 RED_THRESHOLD = 50 # Stretch goal
 BLUE_THRESHOLD = 100 # Stretch goal
-MIN_AREA = float('-inf')
+# MIN_AREA = float('-inf')
+
+MIN_AREA = 100
 
 class Image_Process():
     
@@ -46,8 +48,6 @@ class Image_Process():
                 x,y,h,w = cv.boundingRect(i)
                 bounding_area.append([y,x,w,h])
                 cv.rectangle(frame,(x,y),(x+h, y+w),(0,0,255),2)
-
-        
 
         cv.imshow('Bounding', frame)
         if setup:
