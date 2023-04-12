@@ -1,4 +1,5 @@
 import cv2 as cv
+import numpy as np
 
 from Image_Process import Image_Process
 from Directions import Directions
@@ -26,6 +27,9 @@ class Camera_Capture():
             if not ret:
                 return
             
+            binary = self.image_processor._gray2binary(frame)
+            self.image_processor._contours(binary, frame, True)
+            
             cv.imshow('Setup', frame)
             if cv.waitKey(1) == 13:
                 break
@@ -40,6 +44,8 @@ class Camera_Capture():
         frame_count = 0
         pause = False
 
+        prev_frame = np.zeros((480,640), dtype=np.uint8)*255
+
         while True:
             if not pause:
                 ret, frame = self.cap.read()
@@ -50,9 +56,15 @@ class Camera_Capture():
                 cv.imshow('Binary', binary)
 
                 if frame_count % (FPS) == 0:
-                    self.robot_commands._comm_command(binary)
+                    bounding_area = self.image_processor._contours(binary, frame)
+                    if bounding_area:
+                        self.robot_commands._comm_command(bounding_area)
+
+                binary = self.image_processor._abs_diff(prev_frame,binary)
+                prev_frame = binary
 
                 frame_count += 1
+
 
             key = cv.waitKey(DELAY)
 

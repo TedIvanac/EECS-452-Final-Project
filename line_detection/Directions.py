@@ -1,13 +1,12 @@
-import numpy as np
 import math
 
 import socket
 import json
 
 # Server information
-SERVER_ADDRESS = ('192.168.0.23',2222)
-BUFFER_SIZE = 1024
-UDP_CLIENT = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+# SERVER_ADDRESS = ('192.168.0.23',2222)
+# BUFFER_SIZE = 1024
+# UDP_CLIENT = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 class Directions():
 
@@ -16,187 +15,153 @@ class Directions():
         self.x = None
         self.y = None
         self.p = None
+        self.thickness = None
 
         self.data = []
-
-    """Obtain the midpoint of the current line segment being traversed"""
-    def _get_midpoint(self, prev):
-        if self.dir in [0,1]:
-            midpoint = math.ceil((self.x+prev)/2)
-        elif self.dir in [2,3]:
-            midpoint = math.ceil((self.y+prev)/2)
-
-        return midpoint
     
-    """Obtain the length at the midpoint of the current line segment being traversed"""
-    def _get_length(self, midpoint,diff):
-        k = 0
-        l = 0
-        i = 0
-        j = 0
-        while True:
-            if self.dir in [0,1]:
-                # To the right of the midpoint
-                if self.y + i < diff.shape[1] and diff[midpoint,self.y+i] == 1:
-                    k += 1
-                    i += 1
-                # To the left of the midpoint
-                if self.y - j >= 0 and diff[midpoint, self.y-j] == 1:
-                    l += 1
-                    j += 1
-                # Break if both sides equal 0 
-                if diff[midpoint, self.y+i] == 0 and diff[midpoint, self.y-j] == 0:
-                    break
-
-            elif self.dir in [2,3]:
-                # To the bottom of the midpoint
-                if self.x + i < diff.shape[0] and diff[self.x+i,midpoint] == 1:
-                    k += 1
-                    i += 1
-                # To the top of the midpoint
-                if self.y - j >= 0 and diff[self.x-j, midpoint] == 1:
-                    l += 1
-                    j += 1
-                # Break if both sides equal 0
-                if diff[self.x+i, midpoint] == 0 and diff[self.x-j,midpoint] == 0:
-                    break
-
-        return l, k
-
     """Obtain the distance based on the number of pixels from
     current node to the farthest node based on the direction"""
-    def _get_distance(self):
-        distance = abs(self.p) / ( 38 * 2.54)
+    def _get_distance(self, line):
+        x, y, h, w = line
+        if self.dir == 0:
+            distance = abs(self.x - x) / ( 38 * 2.54)
+        elif self.dir == 1:
+            distance = abs(self.x - (x+h)) / ( 38 * 2.54)
+        elif self.dir == 2:
+            distance = abs(self.y - y) / ( 38 * 2.54)
+        elif self.dir == 3:
+            distance = abs(self.y - (y+w)) / ( 38 * 2.54)
+
         return distance
     
-    """Obtain the x and y coordinate for the starting location"""
-    def _get_x_y(self, diff):
-        rows, cols = np.where(diff == 255)
+    """Obtain the array of the bottom most coordinates, this will
+    serve as the starting point to traverse the image"""
+    def _get_bottom_most(self, array):
+        if not array:
+            return None
+
+        bottom_most = array[0]
+        for arr in array:
+                if arr[0] + arr[2] > bottom_most[0] + bottom_most[2]:
+                    bottom_most = arr
         
-        if rows.size == 0 or cols.size == 0:
-            return None, None
-        else:
-            idx = np.argmax(rows)
-            return rows[idx],cols[idx]
+        array.pop(array.index(bottom_most))
 
-    """Obtain the lengths from current node to farthest nodes
-    in all directions. Based on greatest distance, a direction
-    is generated and returned alongside the greatest distance."""
-    def _get_h_w(self, diff):
-        h_up = 0
-        w_right = 0
-        h_down = 0
-        w_left = 0
+        return bottom_most
+    
+    """Obtain the nearest line array from the current (x,y) location.
+    Additionally, the nearest line will be removed from the array list
+    to prevent future interactions"""
+    def _get_near_line(self, array):
+        min_dist = float("inf")
+        nearest_line = None
 
-        i = self.x-1
-        while True:
-            if i < 0 or diff[i, self.y] == 0:
-                break
-            if diff[i,self.y] == 255:
-                h_up += 1
-                i -= 1
-
-        i = self.y+1
-        while True:
-            if i >= diff.shape[1] or diff[self.x, i] == 0:
-                break
-            if diff[self.x, i] == 255:
-                w_right += 1
-                i += 1
+        for line in array:
+            x1, y1, h, w = line
+            x2, y2 = x1 + h, y1 + w
+            distances = [math.sqrt((self.x-x1)**2 + (self.y-y1)**2),
+                         math.sqrt((self.x-x2)**2 + (self.y-y1)**2),
+                         math.sqrt((self.x-x1)**2 + (self.y-y2)**2),
+                         math.sqrt((self.x-x2)**2 + (self.y-y2)**2)]
             
-        i = self.x+1
-        while True:
-            if i >= diff.shape[0] or diff[i, self.y] == 0:
-                break
-            if diff[i,self.y] == 255:
-                h_down -= 1
-                i += 1
-            
-        i = self.y-1
-        while True:
-            if i < 0 or diff[self.x, i] == 0:
-                break
-            if diff[self.x, i] == 255:
-                w_left -= 1
-                i -= 1
-            
-        directions = [h_up, abs(h_down), abs(w_left), w_right]
+            dist = min(distances)
 
-        if all(x == 0 for x in directions):
-            return None, None
+            if dist < min_dist:
+                min_dist = dist
+                nearest_line = line
 
-        max_dir_index = directions.index(max(directions))
+        array.remove(nearest_line)
+        return nearest_line
 
-        return directions[max_dir_index], max_dir_index
+    """Obtain the direction based on the current x and y to the
+    next set of x and y for the line being traversed"""
+    def _get_direction(self, array):
+        x, y, h, w = array
 
-    """Obtain the starting coordinates and direction to traverse.
-    Otherwise change location to represent the distance travelled.
-    Additionally update adjacent node from travelled direction to 0."""
-    def _get_direction(self, diff):
-        # First iteration
         if self.x is None:
-            self.x, self.y = self._get_x_y(diff)
-            self.p, self.dir = self._get_h_w(diff)
-        # Every iteration after the first
-        else:
-            if self.dir == 0:
-                prev = self.x
-                self.x = self.x - self.p
-                mp = self._get_midpoint(prev)
-                l, k = self._get_length(mp, diff)
+            if h > w:
+                return 0
+            else:
+                return 3
 
-                if self.x+1 < diff.shape[0]:
-                    diff[prev:self.x+1:-1,self.y-l:self.y+k] = 0
-
-            elif self.dir == 1:
-                prev = self.x
-                self.x = self.x + self.p
-                mp = self._get_midpoint(prev)
-                l, k = self._get_length(mp, diff)
-
-                if self.x-1 < 0:
-                    diff[prev:self.x-1,self.y-l:self.y+k] = 0
-
-            elif self.dir == 2:
-                prev = self.y
-                self.y = self.y - self.p
-                mp = self._get_midpoint(prev)
-                l, k = self._get_length(mp, diff)
-
-                if self.y+1 < diff.shape[1]:
-                    diff[self.x-l:self.x+k,prev:self.y+1:-1] = 0
-
-            elif self.dir == 3:
-                prev = self.y
-                self.y = self.y + self.p
-                mp = self._get_midpoint(prev)
-                l, k = self._get_length(mp, diff)
-
-                if self.y-1 < 0:
-                    diff[self.x-l:self.x+k,prev:self.y-1] = 0
-
-            self.p, self.dir = self._get_h_w(diff)
-
-        return self.x, self.y, self.dir
-
+        if h > w:
+            if x < self.x:
+                return 0
+            elif self.x < x:
+                return 1
+        elif w > h:
+            if y < self.y:
+                return 2
+            elif self.y < y:
+                return 3
+        
     """Main function - Binary image is passed to obtain a starting coordinate and direction
     Distance is calculated and returned alongside direction.
     Will only operate for 1 segment of the line until called again"""
-    def _comm_command(self, diff): 
+    def _comm_command(self, array): 
         while True:
-            self.x, self.y, self.dir = self._get_direction(diff)
-            
-            if self.dir == None:
-                break
+            if self.x is None:
+                line = self._get_bottom_most(array)
+                self.dir = self._get_direction(line)
+                if self.dir == 0:
+                    self.x = line[0] + line[2]
+                    self.y = line[1]
+                elif self.dir == 3:
+                    self.x = line[0] + line[2]
+                    self.y = line[1]
+            else:
+                line = self._get_near_line(array)
+                prev_dir = self.dir
+                self.dir = self._get_direction(line)
+
+                if self.dir == 0 and prev_dir == 2:
+                    self.x = line[0] + line[2]
+                    self.y = line[1] + line[3]
+                elif self.dir == 0 and prev_dir == 3:
+                    self.x = line[0] + line[2]
+                    self.y = line[1]
+
+                elif self.dir == 1 and prev_dir == 2:
+                    self.x = line[0]
+                    self.y = line[1] + line[3]
+                elif self.dir == 1 and prev_dir == 3:
+                    self.x = line[0]
+                    self.y = line[1]
+                
+                elif self.dir == 2 and prev_dir == 0:
+                    self.x = line[0] + line[2]
+                    self.y = line[1] + line[3]
+                elif self.dir == 2 and prev_dir == 1:
+                    self.x = line[0]
+                    self.y = line[1] + line[3]
+
+                elif self.dir == 3 and prev_dir == 0:
+                    self.x = line[0] + line[2]
+                    self.y = line[1]  
+                elif self.dir == 3 and prev_dir == 1:
+                    self.x = line[0]
+                    self.y = line[1]           
+
             if self.dir != None:
-                distance = round(self._get_distance(),2)
+                distance = round(self._get_distance(line),2)
 
                 print("Distance: " + str(distance))
                 print("Direction: " + str(self.dir))
 
                 self.data.append([distance, self.dir])
 
-        json_data = json.dumps(self.data)   
-        UDP_CLIENT.sendto(json_data.encode(), SERVER_ADDRESS)
+                if self.dir == 0:
+                    self.x = line[0]
+                elif self.dir == 1:
+                    self.x = line[0] + line[2]
+                elif self.dir == 2:
+                    self.y = line[1]
+                elif self.dir == 3:
+                    self.y = line[1] + line[3]
+            if not array:
+                break
+
+        # json_data = json.dumps(self.data)   
+        # UDP_CLIENT.sendto(json_data.encode(), SERVER_ADDRESS)
 
         self.data = []
